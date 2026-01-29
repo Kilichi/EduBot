@@ -1,0 +1,60 @@
+.agreement-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.agreement-card:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary-blue);
+  transform: translateX(4px);
+}
+
+.agreement-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #10b981;
+  border-radius: 50%;
+  color: var(--white);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.agreement-content {
+  flex: 1;
+}
+
+.agreement-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 0.25rem;
+}
+
+.agreement-subtitle {
+  font-size: 0.875rem;
+  color: var(--gray-400);
+  margin: 0;
+}
+
+.agreement-arrow {
+  font-size: 1rem;
+  color: var(--gray-400);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.agreement-card:hover .agreement-arrow {
+  color: var(--primary-blue);
+  transform: translateX(4px);
+}
