@@ -1,0 +1,1 @@
+// Esquema de mongoose para el acuerdo
