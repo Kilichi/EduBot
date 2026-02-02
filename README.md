@@ -366,3 +366,6 @@ ISC
 ---
 
 Para más información o soporte, consulta los issues del repositorio o contacta al equipo de desarrollo.
+
+
+https://www.passportjs.org/
