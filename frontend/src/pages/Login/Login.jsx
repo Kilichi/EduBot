@@ -21,7 +21,6 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     // TODO: Implementar lógica de login
-    console.log('Login attempt:', { email, password });
   };
 
   return (

@@ -7,21 +7,23 @@ import axios from 'axios';
 
 export const generate = async (prompt) => {
     try {
-        // 1. Asegúrate de que la URL termine en /api/generate
-        const URL = 'http://localhost:11434/api/generate';
-        
-        // 2. Asegúrate de que sea axios.POST
-        const response = await axios.post(URL, {
-            model: 'gemma3', // O el modelo que tengas (ej. 'llama3.1')
-            prompt: prompt,
-            stream: false
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+            model: "llama-3.3-70b-versatile",
+            messages: [
+                { role: "system", content: "Eres un asistente escolar experto. y te llamas manuel" },
+                { role: "user", content: prompt }
+            ]
+        }, {
+            headers: {
+                'Authorization': `Bearer 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`,
+                'Content-Type': 'application/json'
+            }
         });
 
-        return response.data.response;
-
+        return response.data.choices[0].message.content;
     } catch (error) {
-        // Si aquí te sale 405, es que la URL está mal escrita
-        console.error("Error detallado:", error.response?.status, error.message);
-        throw new Error("Error de comunicación con el motor de IA");
+        // Log para ver EXACTAMENTE qué dice la API sobre el error 400
+        console.error("Detalle del error 400:", error.response?.data);
+        throw new Error("Error al conectar con el cerebro de la IA");
     }
 };

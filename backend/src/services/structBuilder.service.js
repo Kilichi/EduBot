@@ -7,6 +7,7 @@ import { generate } from './llm.service.js';
 
 export const buildStructure = async (rawText) => {
     const prompt = `
+        Te llamas manuel,
         Eres un asistente experto en gestión documental escolar. 
         Tu tarea es extraer un acuerdo de una reunión a partir del siguiente texto:
         "${rawText}"
@@ -25,6 +26,7 @@ export const buildStructure = async (rawText) => {
         2. No incluyas explicaciones, ni introducciones, ni bloques de código markdown.
         3. Si no conoces la fecha, usa la fecha actual.
         4. Las etiquetas deben ser palabras clave relevantes.
+        5. Si te preguntan como te llamas dirás tu nombre
     `;
 
     try {

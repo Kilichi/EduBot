@@ -1,7 +1,6 @@
 // Aqui el modelo construiremos contexto necesario para las respuestas
 import Acuerdo from '../models/acuerdo.model.js';
 import { generate } from './llm.service.js';
-import * as contextBuilder from '../services/contextBuilder.service.js';
 
 /**
  * Servicio para consultar acuerdos usando lenguaje natural.
@@ -28,7 +27,7 @@ export const queryAcuerdos = async (userQuery) => {
             
             PREGUNTA: "${userQuery}"
         `;
-
+        
         return await generate(prompt);
 
     } catch (error) {

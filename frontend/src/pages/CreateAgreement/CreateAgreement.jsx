@@ -140,19 +140,6 @@ const CreateAgreement = () => {
           <div className="header-left">
             <h1 className="dashboard-title">Crear Nuevo Acuerdo</h1>
           </div>
-          <div className="header-right">
-            <button className="btn-secondary" onClick={() => navigate('/dashboard')}>
-              Volver al Chat
-            </button>
-            <div className="notification-bell">
-              <FaBell />
-              <span className="notification-dot"></span>
-            </div>
-            <button className="btn-export">
-              <FaDownload />
-              Export Data
-            </button>
-          </div>
         </div>
 
         <div className="chat-container">
