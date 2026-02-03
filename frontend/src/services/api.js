@@ -1,6 +1,71 @@
 const API_BASE_URL = 'http://localhost:3300/api';
 
 /**
+ * Verificar estado de autenticación
+ */
+export const verificarAutenticacion = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/status`, {
+      method: 'GET',
+      credentials: 'include' // Incluir cookies
+    });
+
+    if (!response.ok) {
+      return { autenticado: false, usuario: null };
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error al verificar autenticación:', error);
+    return { autenticado: false, usuario: null };
+  }
+};
+
+/**
+ * Obtener información del usuario actual
+ */
+export const obtenerUsuario = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.usuario;
+  } catch (error) {
+    console.error('Error al obtener usuario:', error);
+    return null;
+  }
+};
+
+/**
+ * Cerrar sesión
+ */
+export const cerrarSesion = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al cerrar sesión');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    throw error;
+  }
+};
+
+/**
  * Consultar acuerdos usando el endpoint de consulta
  */
 export const consultarAPI = async (prompt) => {
@@ -10,6 +75,7 @@ export const consultarAPI = async (prompt) => {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include', // Incluir cookies para autenticación
       body: JSON.stringify({ prompt }),
     });
 
@@ -42,6 +108,7 @@ export const previewRegistroAPI = async (text) => {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify({ text }),
     });
 
@@ -67,6 +134,7 @@ export const confirmRegistroAPI = async (acuerdoData) => {
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(acuerdoData),
     });
 

@@ -15,7 +15,7 @@ const ChatMessage = ({ message }) => {
             <span className="status-dot"></span>
           </>
         )}
-        {isUser && <span className="message-label">YOU</span>}
+        {isUser && <span className="message-label">TÚ</span>}
       </div>
       
       <div className="message-content-wrapper">

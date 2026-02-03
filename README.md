@@ -17,11 +17,13 @@ EduBot es una aplicación web para la gestión de acuerdos institucionales que u
 
 ## ✨ Características
 
+- **Autenticación con Google**: Login seguro usando OAuth 2.0 con Passport.js
 - **Chat de Consulta**: Consulta acuerdos existentes usando lenguaje natural
 - **Creación de Acuerdos**: Crea nuevos acuerdos estructurados a partir de texto libre
 - **Interfaz Responsive**: Diseño optimizado para desktop, tablet y móviles
 - **Procesamiento con IA**: Utiliza LLM (Ollama) para procesar y estructurar información
-- **Base de Datos MongoDB**: Almacenamiento persistente de acuerdos
+- **Base de Datos MongoDB**: Almacenamiento persistente de acuerdos y usuarios
+- **Sesiones Seguras**: Gestión de sesiones con MongoDB y cookies seguras
 
 ## 🛠 Tecnologías
 
@@ -34,7 +36,11 @@ EduBot es una aplicación web para la gestión de acuerdos institucionales que u
 
 ### Backend
 - **Node.js**: Runtime de JavaScript
-- **Express.js**: Framework web (asumido)
+- **Express.js**: Framework web
+- **Passport.js**: Middleware de autenticación
+- **Passport Google OAuth 2.0**: Estrategia de autenticación con Google
+- **Express Session**: Gestión de sesiones
+- **Connect Mongo**: Almacenamiento de sesiones en MongoDB
 - **Mongoose**: ODM para MongoDB
 - **Ollama**: LLM local para procesamiento de texto
 - **CORS**: Manejo de políticas de origen cruzado
@@ -90,6 +96,13 @@ npm install
    OLLAMA_URL=http://localhost:11434
    OLLAMA_MODEL=gemma3
    NODE_ENV=development
+   
+   # Google OAuth Configuration
+   GOOGLE_CLIENT_ID=tu-google-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=tu-google-client-secret
+   API_BASE_URL=http://localhost:3300
+   FRONTEND_URL=http://localhost:5173
+   SESSION_SECRET=tu-secret-key-super-segura-cambiar-en-produccion
    ```
 
 2. **Configurar MongoDB**
@@ -105,6 +118,22 @@ npm install
      ```bash
      ollama pull gemma3
      ```
+
+4. **Configurar Google OAuth**
+
+   Para habilitar el login con Google, necesitas crear credenciales OAuth 2.0:
+
+   1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
+   2. Crea un nuevo proyecto o selecciona uno existente
+   3. Habilita la API de Google+ (si es necesario)
+   4. Ve a "Credenciales" > "Crear credenciales" > "ID de cliente OAuth 2.0"
+   5. Configura la pantalla de consentimiento OAuth
+   6. Agrega los siguientes URIs autorizados:
+      - **URI de redirección autorizado**: `http://localhost:3300/api/auth/google/callback` (debe coincidir exactamente)
+      - **Orígenes JavaScript autorizados**: `http://localhost:5173`
+   7. Copia el **ID de cliente** y el **Secreto de cliente** a tu archivo `.env`
+   
+   **Nota**: En producción, asegúrate de actualizar estos valores con tus URLs de producción.
 
 ### Frontend
 
@@ -338,6 +367,27 @@ Guarda un acuerdo en la base de datos.
 - La aplicación está optimizada para móviles
 - Asegúrate de usar un viewport meta tag correcto
 - Verifica que los estilos responsive estén aplicados
+
+### Error con Google OAuth
+
+1. Verifica que las credenciales de Google OAuth estén correctamente configuradas en `.env`
+2. Asegúrate de que el URI de redirección en Google Cloud Console coincida exactamente con:
+   ```
+   http://localhost:3300/api/auth/google/callback
+   ```
+3. Verifica que el origen JavaScript autorizado incluya:
+   ```
+   http://localhost:5173
+   ```
+4. En producción, actualiza estos valores con tus URLs de producción
+5. Revisa los logs del servidor para ver errores específicos de autenticación
+
+### Error 401 (No autenticado)
+
+1. Asegúrate de haber iniciado sesión con Google
+2. Verifica que las cookies estén habilitadas en tu navegador
+3. Comprueba que `credentials: 'include'` esté configurado en las peticiones fetch
+4. Revisa que CORS esté configurado correctamente con `credentials: true`
 
 ## 📝 Notas Adicionales
 

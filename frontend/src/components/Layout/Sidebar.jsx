@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   FaComments, 
   FaPlus,
@@ -7,13 +7,26 @@ import {
   FaFileAlt, 
   FaCog, 
   FaShieldAlt,
-  FaChevronDown
+  FaChevronDown,
+  FaSignOutAlt
 } from 'react-icons/fa';
 import { HiUserCircle } from 'react-icons/hi';
+import { useAuth } from '../../contexts/AuthContext';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { usuario, cerrarSesion } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await cerrarSesion();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
 
   const menuItems = [
     { path: '/dashboard', label: 'Consultar Acuerdos', icon: FaComments },
@@ -45,7 +58,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <nav className="sidebar-nav">
         <div className="nav-section">
-          <div className="nav-section-title">MAIN MENU</div>
+          <div className="nav-section-title">MENÚ PRINCIPAL</div>
           {menuItems.map((item) => {
             const IconComponent = item.icon;
             return (
@@ -69,13 +82,29 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <div className="sidebar-footer">
         <div className="user-profile">
-          <div className="user-avatar"><HiUserCircle /></div>
+          {usuario?.foto ? (
+            <img 
+              src={usuario.foto} 
+              alt={usuario.nombre} 
+              className="user-avatar-img"
+            />
+          ) : (
+            <div className="user-avatar"><HiUserCircle /></div>
+          )}
           <div className="user-info">
-            <div className="user-name">Dr. Sarah Jenkins</div>
-            <div className="user-role">Dean of Faculty</div>
+            <div className="user-name">
+              {usuario ? `${usuario.nombre} ${usuario.apellido || ''}`.trim() : 'Usuario'}
+            </div>
+            <div className="user-role">{usuario?.email || 'Sin email'}</div>
           </div>
-          <span className="dropdown-arrow"><FaChevronDown /></span>
         </div>
+        <button 
+          className="logout-button"
+          onClick={handleLogout}
+          title="Cerrar sesión"
+        >
+          <FaSignOutAlt />
+        </button>
       </div>
     </aside>
   );

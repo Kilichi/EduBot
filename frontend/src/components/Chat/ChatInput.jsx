@@ -22,7 +22,7 @@ const ChatInput = ({ onSendMessage, disabled, placeholder }) => {
         <input
           type="text"
           className="chat-input"
-          placeholder={placeholder || "Query institutional agreements or ask for summaries..."}
+          placeholder={placeholder || "Consulta acuerdos institucionales o solicita resúmenes..."}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={disabled}
