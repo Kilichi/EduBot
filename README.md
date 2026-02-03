@@ -82,6 +82,28 @@ cd ../frontend
 npm install
 ```
 
+## 🚀 Despliegue en Vercel
+
+Para desplegar la aplicación en Vercel, consulta la [Guía de Despliegue en Vercel](./GUIA_VERCEL.md) que incluye instrucciones detalladas paso a paso.
+
+### Resumen rápido:
+
+1. **Configurar variables de entorno en Vercel:**
+   - `MONGODB_URI`
+   - `SESSION_SECRET`
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `API_GROK`
+   - `NODE_ENV=production`
+
+2. **Configurar Google OAuth:**
+   - Agregar callback URL: `https://tu-proyecto.vercel.app/api/auth/google/callback`
+   - Agregar origen autorizado: `https://tu-proyecto.vercel.app`
+
+3. **Desplegar:**
+   - Conectar repositorio Git a Vercel
+   - Vercel detectará automáticamente la configuración
+
 ## ⚙️ Configuración
 
 ### Backend
@@ -93,7 +115,6 @@ npm install
    ```env
    PORT=3300
    MONGODB_URI=mongodb://localhost:27017/edubot
-   OLLAMA_URL=http://localhost:11434
    OLLAMA_MODEL=gemma3
    NODE_ENV=development
    

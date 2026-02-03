@@ -36,7 +36,10 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     // Redirigir al endpoint de autenticación de Google
-    window.location.href = 'http://localhost:3300/api/auth/google';
+    // Usar variable de entorno en producción, localhost en desarrollo
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || 
+        (import.meta.env.PROD ? '/api' : 'http://localhost:3300/api');
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   return (

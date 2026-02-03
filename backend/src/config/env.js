@@ -11,8 +11,14 @@ export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 
 // URL base de la API (para callbacks de OAuth)
-export const API_BASE_URL = process.env.API_BASE_URL || `http://localhost:${PORT}`;
+// En Vercel, usar VERCEL_URL si está disponible, sino usar API_BASE_URL o localhost
+export const API_BASE_URL = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : (process.env.API_BASE_URL || `http://localhost:${PORT}`);
 
 // Configuración de sesiones
 export const SESSION_SECRET = process.env.SESSION_SECRET || 'edubot-secret-key-change-in-production';
-export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// En Vercel, usar VERCEL_URL para el frontend también
+export const FRONTEND_URL = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : (process.env.FRONTEND_URL || 'http://localhost:5173');

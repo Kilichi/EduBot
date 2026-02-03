@@ -32,7 +32,8 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
         httpOnly: true, // Previene acceso desde JavaScript
-        maxAge: 14 * 24 * 60 * 60 * 1000 // 14 días
+        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Para cross-site en producción
     }
 }));
 
@@ -55,10 +56,18 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// 7. Inicio del servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor Express corriendo en http://localhost:${PORT}`);
-    console.log(`🤖 Esperando peticiones para Ollama...`);
-    console.log(`🔐 Autenticación con Google OAuth configurada`);
+// 7. Inicio del servidor (solo en desarrollo, Vercel maneja esto automáticamente)
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`🚀 Servidor Express corriendo en http://localhost:${PORT}`);
+        console.log(`🤖 Esperando peticiones para Ollama...`);
+        console.log(`🔐 Autenticación con Google OAuth configurada`);
+        connectDB();
+    });
+} else {
+    // En producción (Vercel), conectar a la base de datos al iniciar
     connectDB();
-});
+}
+
+// Exportar para Vercel serverless functions
+export default app;

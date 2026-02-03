@@ -1,4 +1,6 @@
-const API_BASE_URL = 'http://localhost:3300/api';
+// Usar variable de entorno en producción, localhost en desarrollo
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+    (import.meta.env.PROD ? '/api' : 'http://localhost:3300/api');
 
 /**
  * Verificar estado de autenticación

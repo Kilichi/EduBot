@@ -22,7 +22,10 @@ router.get('/google/callback',
     }),
     (req, res) => {
         // Redirigir al frontend después de autenticación exitosa
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        // En Vercel, usar VERCEL_URL si está disponible
+        const frontendUrl = process.env.VERCEL_URL 
+            ? `https://${process.env.VERCEL_URL}` 
+            : (process.env.FRONTEND_URL || 'http://localhost:5173');
         res.redirect(`${frontendUrl}/dashboard`);
     }
 );
