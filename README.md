@@ -17,7 +17,7 @@ EduBot es una aplicación web para la gestión de acuerdos institucionales que u
 
 ## ✨ Características
 
-- **Autenticación con Google**: Login seguro usando OAuth 2.0 con Passport.js
+- **Login con usuario y contraseña**: Autenticación local con Passport.js (usuario/contraseña)
 - **Chat de Consulta**: Consulta acuerdos existentes usando lenguaje natural
 - **Creación de Acuerdos**: Crea nuevos acuerdos estructurados a partir de texto libre
 - **Interfaz Responsive**: Diseño optimizado para desktop, tablet y móviles
@@ -38,7 +38,7 @@ EduBot es una aplicación web para la gestión de acuerdos institucionales que u
 - **Node.js**: Runtime de JavaScript
 - **Express.js**: Framework web
 - **Passport.js**: Middleware de autenticación
-- **Passport Google OAuth 2.0**: Estrategia de autenticación con Google
+- **Passport Local**: Estrategia de autenticación con usuario y contraseña
 - **Express Session**: Gestión de sesiones
 - **Connect Mongo**: Almacenamiento de sesiones en MongoDB
 - **Mongoose**: ODM para MongoDB
@@ -54,10 +54,10 @@ Antes de comenzar, asegúrate de tener instalado:
 
 - **Node.js** (versión 18 o superior)
 - **npm** o **yarn** (gestor de paquetes)
-- **MongoDB** (local o remoto)
-- **Ollama** (para el modelo LLM)
+- **MongoDB** instalado y en ejecución en local (puerto 27017 por defecto)
+- **Ollama** (para el modelo LLM local)
   - Instalar desde: https://ollama.ai
-  - Modelo requerido: `gemma3` (o el modelo configurado en el backend)
+  - Modelo requerido: debe coincidir con `OLLAMA_MODEL` en el backend (p. ej. `llama3.2`, `gemma3`)
 
 ## 🚀 Instalación
 
@@ -82,28 +82,6 @@ cd ../frontend
 npm install
 ```
 
-## 🚀 Despliegue en Vercel
-
-Para desplegar la aplicación en Vercel, consulta la [Guía de Despliegue en Vercel](./GUIA_VERCEL.md) que incluye instrucciones detalladas paso a paso.
-
-### Resumen rápido:
-
-1. **Configurar variables de entorno en Vercel:**
-   - `MONGODB_URI`
-   - `SESSION_SECRET`
-   - `GOOGLE_CLIENT_ID`
-   - `GOOGLE_CLIENT_SECRET`
-   - `API_GROK`
-   - `NODE_ENV=production`
-
-2. **Configurar Google OAuth:**
-   - Agregar callback URL: `https://tu-proyecto.vercel.app/api/auth/google/callback`
-   - Agregar origen autorizado: `https://tu-proyecto.vercel.app`
-
-3. **Desplegar:**
-   - Conectar repositorio Git a Vercel
-   - Vercel detectará automáticamente la configuración
-
 ## ⚙️ Configuración
 
 ### Backend
@@ -114,47 +92,42 @@ Para desplegar la aplicación en Vercel, consulta la [Guía de Despliegue en Ver
 
    ```env
    PORT=3300
-   MONGODB_URI=mongodb://localhost:27017/edubot
-   OLLAMA_MODEL=gemma3
+   MONGODB_URI=mongodb://127.0.0.1:27017/edubot
+   OLLAMA_BASE_URL=http://localhost:11434
+   OLLAMA_MODEL=llama3.2
    NODE_ENV=development
    
-   # Google OAuth Configuration
-   GOOGLE_CLIENT_ID=tu-google-client-id.apps.googleusercontent.com
-   GOOGLE_CLIENT_SECRET=tu-google-client-secret
    API_BASE_URL=http://localhost:3300
    FRONTEND_URL=http://localhost:5173
-   SESSION_SECRET=tu-secret-key-super-segura-cambiar-en-produccion
+   SESSION_SECRET=tu-secret-key-super-segura
    ```
 
 2. **Configurar MongoDB**
 
-   - Asegúrate de que MongoDB esté corriendo
-   - La URI de conexión debe apuntar a tu instancia de MongoDB
-   - La base de datos se creará automáticamente si no existe
+   - Instala MongoDB y asegúrate de que esté en ejecución (p. ej. `mongod` o como servicio).
+   - La URI por defecto es `mongodb://127.0.0.1:27017/edubot`. La base de datos se crea automáticamente si no existe.
 
 3. **Configurar Ollama**
 
-   - Inicia el servicio de Ollama
-   - Descarga el modelo necesario:
+   - Instala Ollama desde https://ollama.ai y deja el servicio en ejecución.
+   - Descarga un modelo (el nombre debe coincidir con `OLLAMA_MODEL` en `.env`):
      ```bash
-     ollama pull gemma3
+     ollama pull llama3.2
      ```
 
-4. **Configurar Google OAuth**
+4. **Crear el primer usuario**
 
-   Para habilitar el login con Google, necesitas crear credenciales OAuth 2.0:
+   No hay Google OAuth: el acceso es con usuario y contraseña. Para crear el primer usuario, usa el endpoint de registro (por ejemplo con curl o Postman):
 
-   1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
-   2. Crea un nuevo proyecto o selecciona uno existente
-   3. Habilita la API de Google+ (si es necesario)
-   4. Ve a "Credenciales" > "Crear credenciales" > "ID de cliente OAuth 2.0"
-   5. Configura la pantalla de consentimiento OAuth
-   6. Agrega los siguientes URIs autorizados:
-      - **URI de redirección autorizado**: `http://localhost:3300/api/auth/google/callback` (debe coincidir exactamente)
-      - **Orígenes JavaScript autorizados**: `http://localhost:5173`
-   7. Copia el **ID de cliente** y el **Secreto de cliente** a tu archivo `.env`
+   ```bash
+   curl -X POST http://localhost:3300/api/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"usuario":"admin","password":"tu_contraseña","nombre":"Administrador"}'
+   ```
+
+   Luego inicia sesión en la aplicación con ese usuario y contraseña.
    
-   **Nota**: En producción, asegúrate de actualizar estos valores con tus URLs de producción.
+   En producción, actualiza `API_BASE_URL` y `FRONTEND_URL` si corres la app en otro equipo o puerto.
 
 ### Frontend
 
@@ -367,11 +340,11 @@ Guarda un acuerdo en la base de datos.
    ```bash
    ollama list
    ```
-2. Asegúrate de que el modelo esté descargado:
+2. Asegúrate de que el modelo esté descargado (el nombre debe coincidir con `OLLAMA_MODEL` en el backend):
    ```bash
-   ollama pull gemma3
+   ollama pull llama3.2
    ```
-3. Revisa la URL de Ollama en la configuración del backend
+3. Revisa `OLLAMA_BASE_URL` y `OLLAMA_MODEL` en el `.env` del backend.
 
 ### Problemas de compilación
 
@@ -389,23 +362,15 @@ Guarda un acuerdo en la base de datos.
 - Asegúrate de usar un viewport meta tag correcto
 - Verifica que los estilos responsive estén aplicados
 
-### Error con Google OAuth
+### Error de login (usuario o contraseña)
 
-1. Verifica que las credenciales de Google OAuth estén correctamente configuradas en `.env`
-2. Asegúrate de que el URI de redirección en Google Cloud Console coincida exactamente con:
-   ```
-   http://localhost:3300/api/auth/google/callback
-   ```
-3. Verifica que el origen JavaScript autorizado incluya:
-   ```
-   http://localhost:5173
-   ```
-4. En producción, actualiza estos valores con tus URLs de producción
-5. Revisa los logs del servidor para ver errores específicos de autenticación
+1. Comprueba que el usuario exista (crea uno con `POST /api/auth/register` si es el primero).
+2. Verifica que no haya errores en la consola del servidor al hacer login.
+3. Asegúrate de que las cookies estén habilitadas y CORS permita `credentials: true`.
 
 ### Error 401 (No autenticado)
 
-1. Asegúrate de haber iniciado sesión con Google
+1. Asegúrate de haber iniciado sesión con tu usuario y contraseña
 2. Verifica que las cookies estén habilitadas en tu navegador
 3. Comprueba que `credentials: 'include'` esté configurado en las peticiones fetch
 4. Revisa que CORS esté configurado correctamente con `credentials: true`
@@ -437,7 +402,3 @@ ISC
 ---
 
 Para más información o soporte, consulta los issues del repositorio o contacta al equipo de desarrollo.
-
-atlas 
-atlas vector
-https://www.passportjs.org/

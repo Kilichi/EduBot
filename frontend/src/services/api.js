@@ -3,8 +3,43 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ||
     (import.meta.env.PROD ? '/api' : 'http://localhost:3300/api');
 
 /**
- * Verificar estado de autenticación
+ * Iniciar sesión con usuario y contraseña
  */
+export const iniciarSesion = async (usuario, password) => {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ usuario, password }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Usuario o contraseña incorrectos');
+  }
+
+  return response.json();
+};
+
+/**
+ * Registrar nuevo usuario
+ */
+export const registrarUsuario = async (usuario, password, nombre) => {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ usuario: usuario.trim(), password, nombre: nombre.trim() }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.error || 'Error al registrar');
+  }
+
+  return response.json();
+};
+
 export const verificarAutenticacion = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/status`, {

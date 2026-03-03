@@ -1,29 +1,29 @@
 import axios from 'axios';
+import { OLLAMA_BASE_URL, OLLAMA_MODEL } from '../config/env.js';
 
 /**
- * Servicio de comunicación con el LLM
- * Interfaz lógica: generate(prompt) -> string 
+ * Servicio de comunicación con el LLM local (Ollama)
+ * Interfaz lógica: generate(prompt) -> string
  */
 
 export const generate = async (prompt) => {
     try {
-        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: "llama-3.3-70b-versatile",
+        const url = `${OLLAMA_BASE_URL}/api/chat`;
+        const response = await axios.post(url, {
+            model: OLLAMA_MODEL,
             messages: [
-                { role: "system", content: "Eres un asistente escolar experto. y te llamas manuel" },
-                { role: "user", content: prompt }
-            ]
+                { role: 'system', content: 'Eres un asistente escolar experto y te llamas Manuel.' },
+                { role: 'user', content: prompt }
+            ],
+            stream: false
         }, {
-            headers: {
-                'Authorization': `Bearer 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`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 120000
         });
 
-        return response.data.choices[0].message.content;
+        return response.data.message?.content ?? '';
     } catch (error) {
-        // Log para ver EXACTAMENTE qué dice la API sobre el error 400
-        console.error("Detalle del error 400:", error.response?.data);
-        throw new Error("Error al conectar con el cerebro de la IA");
+        console.error('Error al conectar con Ollama:', error.response?.data ?? error.message);
+        throw new Error('Error al conectar con el cerebro de la IA. Asegúrate de que Ollama esté en ejecución y el modelo esté disponible.');
     }
 };

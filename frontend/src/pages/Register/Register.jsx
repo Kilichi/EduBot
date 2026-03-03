@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { FaRobot, FaUser, FaLock, FaEye, FaEyeSlash, FaChevronRight } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaRobot, FaUser, FaLock, FaUserTag, FaEye, FaEyeSlash, FaChevronRight } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
-import './Login.css';
+import { registrarUsuario } from '../../services/api';
+import '../Login/Login.css';
+import './Register.css';
 
-const Login = () => {
+const Register = () => {
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
+  const [nombre, setNombre] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const { autenticado, cargando, login } = useAuth();
+  const { autenticado, cargando } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,16 +25,28 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!usuario.trim() || !password) {
-      setError('Introduce usuario y contraseña');
+    if (!usuario.trim()) {
+      setError('El usuario es obligatorio');
+      return;
+    }
+    if (!password) {
+      setError('La contraseña es obligatoria');
+      return;
+    }
+    if (password.length < 4) {
+      setError('La contraseña debe tener al menos 4 caracteres');
+      return;
+    }
+    if (!nombre.trim()) {
+      setError('El nombre es obligatorio');
       return;
     }
     setEnviando(true);
     try {
-      await login(usuario.trim(), password);
-      navigate('/dashboard', { replace: true });
+      await registrarUsuario(usuario, password, nombre);
+      navigate('/login', { replace: true });
     } catch (err) {
-      setError(err.message || 'Usuario o contraseña incorrectos');
+      setError(err.message || 'Error al registrar');
     } finally {
       setEnviando(false);
     }
@@ -53,16 +68,16 @@ const Login = () => {
               <span className="marketing-title-accent">Edu</span>Bot<br />
             </h1>
             <p className="marketing-description">
-              Accede a la plataforma de EduBot para gestionar los acuerdos de reuniones, conjuntos de entrenamiento del chatbot y permisos de usuarios en tu institución.
+              Crea tu cuenta para acceder a la plataforma de gestión de acuerdos, consultas con IA y permisos de tu institución.
             </p>
           </div>
         </div>
 
         <div className="login-right-panel">
           <div className="login-card">
-            <h2 className="login-card-title">Inicio de sesión</h2>
+            <h2 className="login-card-title">Crear cuenta</h2>
             <p className="login-card-subtitle">
-              Introduce tu usuario y contraseña para acceder a la plataforma.
+              Rellena los datos para registrarte en la plataforma.
             </p>
 
             <form className="login-form" onSubmit={handleSubmit}>
@@ -75,10 +90,26 @@ const Login = () => {
                     id="usuario"
                     type="text"
                     className="form-input"
-                    placeholder="Tu usuario"
+                    placeholder="Nombre de usuario"
                     value={usuario}
                     onChange={(e) => setUsuario(e.target.value)}
                     autoComplete="username"
+                    disabled={enviando}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="nombre">Nombre</label>
+                <div className="input-wrapper">
+                  <span className="input-icon"><FaUserTag /></span>
+                  <input
+                    id="nombre"
+                    type="text"
+                    className="form-input"
+                    placeholder="Tu nombre"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    autoComplete="name"
                     disabled={enviando}
                   />
                 </div>
@@ -91,10 +122,10 @@ const Login = () => {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     className="form-input"
-                    placeholder="Tu contraseña"
+                    placeholder="Mínimo 4 caracteres"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     disabled={enviando}
                   />
                   <button
@@ -112,17 +143,13 @@ const Login = () => {
                 className="login-button"
                 disabled={enviando}
               >
-                {enviando ? 'Entrando...' : 'Iniciar sesión'}
+                {enviando ? 'Registrando...' : 'Registrarse'}
                 <span className="button-arrow"><FaChevronRight /></span>
               </button>
             </form>
 
-            <p className="login-disclaimer">
-              Este es un sistema empresarial restringido. Los intentos de acceso no autorizados son registrados y monitoreados.
-            </p>
-
             <p className="auth-switch">
-              ¿No tienes cuenta? <Link to="/registro" className="auth-switch-link">Regístrate</Link>
+              ¿Ya tienes cuenta? <Link to="/login" className="auth-switch-link">Iniciar sesión</Link>
             </p>
           </div>
         </div>
@@ -137,4 +164,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

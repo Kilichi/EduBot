@@ -83,9 +83,9 @@ const Sidebar = ({ isOpen, onClose }) => {
       <div className="sidebar-footer">
         <div className="user-profile">
           {usuario?.foto ? (
-            <img 
-              src={usuario.foto} 
-              alt={usuario.nombre} 
+            <img
+              src={usuario.foto}
+              alt={usuario.nombre}
               className="user-avatar-img"
             />
           ) : (
@@ -93,9 +93,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           )}
           <div className="user-info">
             <div className="user-name">
-              {usuario ? `${usuario.nombre} ${usuario.apellido || ''}`.trim() : 'Usuario'}
+              {usuario ? (usuario.nombre || usuario.usuario) : 'Usuario'}
             </div>
-            <div className="user-role">{usuario?.email || 'Sin email'}</div>
+            <div className="user-role">{usuario?.usuario || 'Usuario'}</div>
           </div>
         </div>
         <button 

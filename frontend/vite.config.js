@@ -8,6 +8,5 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
   },
-  // Configuración para Vercel
   base: '/',
 })

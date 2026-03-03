@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { verificarAutenticacion, cerrarSesion as cerrarSesionAPI } from '../services/api';
+import { verificarAutenticacion, cerrarSesion as cerrarSesionAPI, iniciarSesion as iniciarSesionAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -45,6 +45,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const login = async (usuario, password) => {
+    const resultado = await iniciarSesionAPI(usuario, password);
+    setAutenticado(resultado.autenticado);
+    setUsuario(resultado.usuario || null);
+  };
+
   const actualizarUsuario = (nuevoUsuario) => {
     setUsuario(nuevoUsuario);
     setAutenticado(!!nuevoUsuario);
@@ -54,6 +60,7 @@ export const AuthProvider = ({ children }) => {
     usuario,
     autenticado,
     cargando,
+    login,
     cerrarSesion,
     actualizarUsuario,
     verificarEstadoAutenticacion

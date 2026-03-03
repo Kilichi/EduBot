@@ -1,31 +1,24 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const usuarioSchema = new mongoose.Schema({
-    googleId: {
+    usuario: {
         type: String,
         required: true,
         unique: true,
+        trim: true,
+        lowercase: true,
         index: true
     },
-    email: {
+    password: {
         type: String,
         required: true,
-        unique: true,
-        lowercase: true,
-        trim: true
+        select: false
     },
     nombre: {
         type: String,
         required: true,
         trim: true
-    },
-    apellido: {
-        type: String,
-        trim: true
-    },
-    foto: {
-        type: String,
-        default: null
     },
     esNuevo: {
         type: Boolean,
@@ -48,8 +41,17 @@ const usuarioSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Índice compuesto para búsquedas rápidas
-usuarioSchema.index({ googleId: 1, activo: 1 });
+usuarioSchema.index({ usuario: 1, activo: 1 });
+
+// Hash de contraseña antes de guardar
+usuarioSchema.pre('save', async function () {
+    if (!this.isModified('password')) return;
+    this.password = await bcrypt.hash(this.password, 10);
+});
+
+usuarioSchema.methods.compararPassword = function (candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 const Usuario = mongoose.model('Usuario', usuarioSchema);
 export default Usuario;

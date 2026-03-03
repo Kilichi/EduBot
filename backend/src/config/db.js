@@ -1,10 +1,10 @@
-// Conexion moongoose a la base de datos
-import moongoose from 'mongoose';
+// Conexión mongoose a la base de datos
+import mongoose from 'mongoose';
 import { MONGODB_URI } from './env.js';
 
 export const connectDB = async () => {
     try {
-        await moongoose.connect(MONGODB_URI);
+        await mongoose.connect(MONGODB_URI);
         console.log('Conexion a la base de datos exitosa');
     } catch (error) {
         console.error('Error al conectar a la base de datos:', error);

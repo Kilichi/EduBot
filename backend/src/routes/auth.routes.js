@@ -1,54 +1,92 @@
 import { Router } from 'express';
 import passport from '../config/passport.js';
 import { isAuthenticated } from '../middleware/auth.middleware.js';
+import Usuario from '../models/usuario.model.js';
 
 const router = Router();
 
 /**
- * Iniciar autenticación con Google
+ * Login con usuario y contraseña
  */
-router.get('/google', 
-    passport.authenticate('google', { 
-        scope: ['profile', 'email'] 
-    })
-);
+router.post('/login', (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+        if (err) {
+            return res.status(500).json({ error: 'Error en el servidor', autenticado: false });
+        }
+        if (!user) {
+            return res.status(401).json({
+                error: info?.message || 'Usuario o contraseña incorrectos',
+                autenticado: false
+            });
+        }
+        req.login(user, (loginErr) => {
+            if (loginErr) {
+                return res.status(500).json({ error: 'Error al iniciar sesión', autenticado: false });
+            }
+            return res.json({
+                autenticado: true,
+                usuario: {
+                    id: user._id,
+                    usuario: user.usuario,
+                    nombre: user.nombre,
+                    esNuevo: user.esNuevo,
+                    rol: user.rol
+                }
+            });
+        });
+    })(req, res, next);
+});
 
 /**
- * Callback de Google OAuth
+ * Registro de nuevo usuario (opcional)
  */
-router.get('/google/callback',
-    passport.authenticate('google', { 
-        failureRedirect: '/login?error=auth_failed' 
-    }),
-    (req, res) => {
-        // Redirigir al frontend después de autenticación exitosa
-        // En Vercel, usar VERCEL_URL si está disponible
-        const frontendUrl = process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}` 
-            : (process.env.FRONTEND_URL || 'http://localhost:5173');
-        res.redirect(`${frontendUrl}/dashboard`);
+router.post('/register', async (req, res) => {
+    try {
+        const { usuario, password, nombre } = req.body;
+        if (!usuario || !password || !nombre) {
+            return res.status(400).json({
+                error: 'Faltan campos: usuario, password y nombre son obligatorios'
+            });
+        }
+        const existente = await Usuario.findOne({ usuario: usuario.toLowerCase() });
+        if (existente) {
+            return res.status(409).json({ error: 'Ese nombre de usuario ya existe' });
+        }
+        const nuevo = await Usuario.create({
+            usuario: usuario.trim().toLowerCase(),
+            password: password,
+            nombre: nombre.trim(),
+            rol: 'usuario',
+            activo: true
+        });
+        const u = nuevo.toObject();
+        delete u.password;
+        res.status(201).json({
+            message: 'Usuario creado',
+            usuario: { id: u._id, usuario: u.usuario, nombre: u.nombre, rol: u.rol }
+        });
+    } catch (error) {
+        console.error('Error en registro:', error);
+        res.status(500).json({ error: 'Error al crear el usuario' });
     }
-);
+});
 
 /**
  * Verificar estado de autenticación
  */
 router.get('/status', (req, res) => {
-    if (req.isAuthenticated()) {
+    if (req.isAuthenticated() && req.user) {
         return res.json({
             autenticado: true,
             usuario: {
                 id: req.user._id,
-                email: req.user.email,
+                usuario: req.user.usuario,
                 nombre: req.user.nombre,
-                apellido: req.user.apellido,
-                foto: req.user.foto,
                 esNuevo: req.user.esNuevo,
                 rol: req.user.rol
             }
         });
     }
-    
     return res.json({
         autenticado: false,
         usuario: null
@@ -68,9 +106,9 @@ router.post('/logout', (req, res, next) => {
                 return next(err);
             }
             res.clearCookie('connect.sid');
-            res.json({ 
+            res.json({
                 message: 'Sesión cerrada correctamente',
-                autenticado: false 
+                autenticado: false
             });
         });
     });
@@ -83,10 +121,8 @@ router.get('/me', isAuthenticated, (req, res) => {
     res.json({
         usuario: {
             id: req.user._id,
-            email: req.user.email,
+            usuario: req.user.usuario,
             nombre: req.user.nombre,
-            apellido: req.user.apellido,
-            foto: req.user.foto,
             esNuevo: req.user.esNuevo,
             rol: req.user.rol,
             ultimoAcceso: req.user.ultimoAcceso

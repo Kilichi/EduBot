@@ -56,18 +56,13 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// 7. Inicio del servidor (solo en desarrollo, Vercel maneja esto automáticamente)
-if (process.env.NODE_ENV !== 'production') {
+// 7. Inicio del servidor
+connectDB().then(() => {
     app.listen(PORT, () => {
-        console.log(`🚀 Servidor Express corriendo en http://localhost:${PORT}`);
-        console.log(`🤖 Esperando peticiones para Ollama...`);
-        console.log(`🔐 Autenticación con Google OAuth configurada`);
-        connectDB();
+        console.log(`Servidor Express corriendo en http://localhost:${PORT}`);
+        console.log(`Ollama (LLM local) configurado`);
+        console.log(`Login con usuario y contraseña configurado`);
     });
-} else {
-    // En producción (Vercel), conectar a la base de datos al iniciar
-    connectDB();
-}
+});
 
-// Exportar para Vercel serverless functions
 export default app;
