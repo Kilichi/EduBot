@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { FormEvent, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaRobot, FaUser, FaLock, FaUserTag, FaEye, FaEyeSlash, FaChevronRight } from 'react-icons/fa';
+import { FaRobot, FaUser, FaLock, FaUserTag, FaEye, FaEyeSlash, FaChevronRight, FaCheck, FaTimes } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api-client';
+import { validateUsuario, validatePassword, validateNombre, validateRegisterForm } from '@/lib/validation';
 
 export default function RegistroPage() {
   const router = useRouter();
@@ -17,19 +18,34 @@ export default function RegistroPage() {
   const [enviando, setEnviando] = useState(false);
   const { autenticado, cargando } = useAuth();
 
+  const [touched, setTouched] = useState({ usuario: false, nombre: false, password: false });
+
+  const usuarioVal = touched.usuario ? validateUsuario(usuario) : null;
+  const nombreVal = touched.nombre ? validateNombre(nombre) : null;
+  const passwordVal = touched.password ? validatePassword(password) : null;
+
   useEffect(() => {
     if (!cargando && autenticado) {
       router.replace('/dashboard');
     }
   }, [autenticado, cargando, router]);
 
+  function handleBlur(field: 'usuario' | 'nombre' | 'password') {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    if (!usuario.trim()) { setError('El usuario es obligatorio'); return; }
-    if (!password) { setError('La contraseña es obligatoria'); return; }
-    if (password.length < 4) { setError('La contraseña debe tener al menos 4 caracteres'); return; }
-    if (!nombre.trim()) { setError('El nombre es obligatorio'); return; }
+    setTouched({ usuario: true, nombre: true, password: true });
+
+    const result = validateRegisterForm(usuario, password, nombre);
+    if (!result.valid) {
+      const first = [...result.usuario, ...result.nombre, ...result.password][0];
+      setError(first || 'Revisa los campos del formulario');
+      return;
+    }
+
     setEnviando(true);
     try {
       await api.register(usuario, password, nombre);
@@ -69,30 +85,68 @@ export default function RegistroPage() {
 
             <form className="login-form" onSubmit={handleSubmit} suppressHydrationWarning>
               {error && <p className="login-error">{error}</p>}
+
               <div className="form-group">
                 <label className="form-label" htmlFor="usuario">Usuario</label>
-                <div className="input-wrapper">
+                <div className={`input-wrapper ${usuarioVal ? (usuarioVal.valid ? 'input-valid' : 'input-invalid') : ''}`}>
                   <span className="input-icon"><FaUser /></span>
-                  <input id="usuario" type="text" className="form-input" placeholder="Nombre de usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" disabled={enviando} suppressHydrationWarning />
+                  <input id="usuario" type="text" className="form-input" placeholder="Ej: juan.perez" value={usuario} onChange={(e) => setUsuario(e.target.value)} onBlur={() => handleBlur('usuario')} autoComplete="username" disabled={enviando} maxLength={30} suppressHydrationWarning />
+                  {usuarioVal && (
+                    <span className={`input-status-icon ${usuarioVal.valid ? 'status-ok' : 'status-err'}`}>
+                      {usuarioVal.valid ? <FaCheck /> : <FaTimes />}
+                    </span>
+                  )}
                 </div>
+                {usuarioVal && !usuarioVal.valid && (
+                  <ul className="field-errors">{usuarioVal.errors.map((e) => <li key={e}>{e}</li>)}</ul>
+                )}
+                <span className="form-hint">3-30 caracteres. Letras, números, puntos, guiones.</span>
               </div>
+
               <div className="form-group">
                 <label className="form-label" htmlFor="nombre">Nombre</label>
-                <div className="input-wrapper">
+                <div className={`input-wrapper ${nombreVal ? (nombreVal.valid ? 'input-valid' : 'input-invalid') : ''}`}>
                   <span className="input-icon"><FaUserTag /></span>
-                  <input id="nombre" type="text" className="form-input" placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" disabled={enviando} suppressHydrationWarning />
+                  <input id="nombre" type="text" className="form-input" placeholder="Tu nombre completo" value={nombre} onChange={(e) => setNombre(e.target.value)} onBlur={() => handleBlur('nombre')} autoComplete="name" disabled={enviando} maxLength={60} suppressHydrationWarning />
+                  {nombreVal && (
+                    <span className={`input-status-icon ${nombreVal.valid ? 'status-ok' : 'status-err'}`}>
+                      {nombreVal.valid ? <FaCheck /> : <FaTimes />}
+                    </span>
+                  )}
                 </div>
+                {nombreVal && !nombreVal.valid && (
+                  <ul className="field-errors">{nombreVal.errors.map((e) => <li key={e}>{e}</li>)}</ul>
+                )}
               </div>
+
               <div className="form-group">
                 <label className="form-label" htmlFor="password">Contraseña</label>
-                <div className="input-wrapper">
+                <div className={`input-wrapper ${passwordVal ? (passwordVal.valid ? 'input-valid' : 'input-invalid') : ''}`}>
                   <span className="input-icon"><FaLock /></span>
-                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Mínimo 4 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" disabled={enviando} suppressHydrationWarning />
+                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Mínimo 8 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} onBlur={() => handleBlur('password')} autoComplete="new-password" disabled={enviando} maxLength={128} suppressHydrationWarning />
                   <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
+                  {passwordVal && (
+                    <span className={`input-status-icon ${passwordVal.valid ? 'status-ok' : 'status-err'}`}>
+                      {passwordVal.valid ? <FaCheck /> : <FaTimes />}
+                    </span>
+                  )}
                 </div>
+                {passwordVal && !passwordVal.valid && (
+                  <ul className="field-errors">{passwordVal.errors.map((e) => <li key={e}>{e}</li>)}</ul>
+                )}
+                {touched.password && password.length > 0 && (
+                  <div className="password-strength">
+                    <div className="strength-bar">
+                      <div className={`strength-fill strength-${getStrength(password)}`} />
+                    </div>
+                    <span className={`strength-label strength-text-${getStrength(password)}`}>{getStrengthLabel(getStrength(password))}</span>
+                  </div>
+                )}
+                <span className="form-hint">Mín. 8 caracteres con mayúscula, minúscula y número.</span>
               </div>
+
               <button type="submit" className="login-button" disabled={enviando} suppressHydrationWarning>
                 {enviando ? 'Registrando...' : 'Registrarse'}
                 <span className="button-arrow"><FaChevronRight /></span>
@@ -113,4 +167,18 @@ export default function RegistroPage() {
       </footer>
     </div>
   );
+}
+
+function getStrength(pw: string): number {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^a-zA-Z0-9]/.test(pw)) score++;
+  return Math.min(score, 4);
+}
+
+function getStrengthLabel(s: number): string {
+  return ['Muy débil', 'Débil', 'Aceptable', 'Fuerte', 'Muy fuerte'][s];
 }

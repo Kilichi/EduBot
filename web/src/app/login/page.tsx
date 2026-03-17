@@ -5,6 +5,7 @@ import { FormEvent, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaRobot, FaUser, FaLock, FaEye, FaEyeSlash, FaChevronRight } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
+import { validateLoginForm } from '@/lib/validation';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ usuario: string[]; password: string[] }>({ usuario: [], password: [] });
   const { autenticado, cargando, login } = useAuth();
 
   useEffect(() => {
@@ -24,10 +26,11 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    if (!usuario.trim() || !password) {
-      setError('Introduce usuario y contraseña');
-      return;
-    }
+
+    const result = validateLoginForm(usuario, password);
+    setFieldErrors({ usuario: result.usuario, password: result.password });
+    if (!result.valid) return;
+
     setEnviando(true);
     try {
       await login(usuario.trim(), password);
@@ -70,23 +73,32 @@ export default function LoginPage() {
 
             <form className="login-form" onSubmit={handleSubmit} suppressHydrationWarning>
               {error && <p className="login-error">{error}</p>}
+
               <div className="form-group">
                 <label className="form-label" htmlFor="usuario">Usuario</label>
-                <div className="input-wrapper">
+                <div className={`input-wrapper ${fieldErrors.usuario.length ? 'input-invalid' : ''}`}>
                   <span className="input-icon"><FaUser /></span>
-                  <input id="usuario" type="text" className="form-input" placeholder="Tu usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" disabled={enviando} suppressHydrationWarning />
+                  <input id="usuario" type="text" className="form-input" placeholder="Tu usuario" value={usuario} onChange={(e) => { setUsuario(e.target.value); setFieldErrors((p) => ({ ...p, usuario: [] })); }} autoComplete="username" disabled={enviando} maxLength={30} suppressHydrationWarning />
                 </div>
+                {fieldErrors.usuario.length > 0 && (
+                  <ul className="field-errors">{fieldErrors.usuario.map((e) => <li key={e}>{e}</li>)}</ul>
+                )}
               </div>
+
               <div className="form-group">
                 <label className="form-label" htmlFor="password">Contraseña</label>
-                <div className="input-wrapper">
+                <div className={`input-wrapper ${fieldErrors.password.length ? 'input-invalid' : ''}`}>
                   <span className="input-icon"><FaLock /></span>
-                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" disabled={enviando} suppressHydrationWarning />
+                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Tu contraseña" value={password} onChange={(e) => { setPassword(e.target.value); setFieldErrors((p) => ({ ...p, password: [] })); }} autoComplete="current-password" disabled={enviando} maxLength={128} suppressHydrationWarning />
                   <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
+                {fieldErrors.password.length > 0 && (
+                  <ul className="field-errors">{fieldErrors.password.map((e) => <li key={e}>{e}</li>)}</ul>
+                )}
               </div>
+
               <button type="submit" className="login-button" disabled={enviando} suppressHydrationWarning>
                 {enviando ? 'Entrando...' : 'Iniciar sesión'}
                 <span className="button-arrow"><FaChevronRight /></span>

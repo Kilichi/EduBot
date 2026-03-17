@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbConnect } from '@/lib/mongoose';
 import Usuario from '@/models/Usuario';
+import { validateRegisterForm } from '@/lib/validation';
 
 export async function POST(request: Request) {
   try {
@@ -9,11 +10,10 @@ export async function POST(request: Request) {
     const password = String(body?.password || '');
     const nombre = String(body?.nombre || '').trim();
 
-    if (!usuario || !password || !nombre) {
-      return NextResponse.json(
-        { error: 'Faltan campos: usuario, password y nombre son obligatorios' },
-        { status: 400 }
-      );
+    const validation = validateRegisterForm(usuario, password, nombre);
+    if (!validation.valid) {
+      const allErrors = [...validation.usuario, ...validation.nombre, ...validation.password];
+      return NextResponse.json({ error: allErrors[0] }, { status: 400 });
     }
 
     await dbConnect();
@@ -47,4 +47,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Error al crear el usuario' }, { status: 500 });
   }
 }
-
