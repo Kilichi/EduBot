@@ -190,6 +190,6 @@ EduBot/
 
 ## Autor
 
-Proyecto desarrollado por **Jose Poveda Sabater** y **Vive Coding**.
+Proyecto desarrollado por **Jose Poveda** con **Vive Coding**.
 
 © 2026 — IES Hermanos Amorós · EduBot 1.0
