@@ -67,27 +67,27 @@ export default function RegistroPage() {
             <h2 className="login-card-title">Crear cuenta</h2>
             <p className="login-card-subtitle">Rellena los datos para registrarte en la plataforma.</p>
 
-            <form className="login-form" onSubmit={handleSubmit}>
+            <form className="login-form" onSubmit={handleSubmit} suppressHydrationWarning>
               {error && <p className="login-error">{error}</p>}
               <div className="form-group">
                 <label className="form-label" htmlFor="usuario">Usuario</label>
                 <div className="input-wrapper">
                   <span className="input-icon"><FaUser /></span>
-                  <input id="usuario" type="text" className="form-input" placeholder="Nombre de usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" disabled={enviando} />
+                  <input id="usuario" type="text" className="form-input" placeholder="Nombre de usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" disabled={enviando} suppressHydrationWarning />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="nombre">Nombre</label>
                 <div className="input-wrapper">
                   <span className="input-icon"><FaUserTag /></span>
-                  <input id="nombre" type="text" className="form-input" placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" disabled={enviando} />
+                  <input id="nombre" type="text" className="form-input" placeholder="Tu nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" disabled={enviando} suppressHydrationWarning />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="password">Contraseña</label>
                 <div className="input-wrapper">
                   <span className="input-icon"><FaLock /></span>
-                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Mínimo 4 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" disabled={enviando} />
+                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Mínimo 4 caracteres" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" disabled={enviando} suppressHydrationWarning />
                   <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>

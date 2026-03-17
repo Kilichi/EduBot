@@ -68,20 +68,20 @@ export default function LoginPage() {
               Introduce tu usuario y contraseña para acceder a la plataforma.
             </p>
 
-            <form className="login-form" onSubmit={handleSubmit}>
+            <form className="login-form" onSubmit={handleSubmit} suppressHydrationWarning>
               {error && <p className="login-error">{error}</p>}
               <div className="form-group">
                 <label className="form-label" htmlFor="usuario">Usuario</label>
                 <div className="input-wrapper">
                   <span className="input-icon"><FaUser /></span>
-                  <input id="usuario" type="text" className="form-input" placeholder="Tu usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" disabled={enviando} />
+                  <input id="usuario" type="text" className="form-input" placeholder="Tu usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} autoComplete="username" disabled={enviando} suppressHydrationWarning />
                 </div>
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="password">Contraseña</label>
                 <div className="input-wrapper">
                   <span className="input-icon"><FaLock /></span>
-                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" disabled={enviando} />
+                  <input id="password" type={showPassword ? 'text' : 'password'} className="form-input" placeholder="Tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" disabled={enviando} suppressHydrationWarning />
                   <button type="button" className="password-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
@@ -92,10 +92,6 @@ export default function LoginPage() {
                 <span className="button-arrow"><FaChevronRight /></span>
               </button>
             </form>
-
-            <p className="login-disclaimer">
-              Este es un sistema empresarial restringido. Los intentos de acceso no autorizados son registrados y monitoreados.
-            </p>
 
             <p className="auth-switch">
               ¿No tienes cuenta? <Link href="/registro" className="auth-switch-link">Regístrate</Link>

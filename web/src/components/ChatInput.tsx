@@ -21,7 +21,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
   }
 
   return (
-    <form className="chat-input-container" onSubmit={handleSubmit}>
+    <form className="chat-input-container" onSubmit={handleSubmit} suppressHydrationWarning>
       <div className="chat-input-wrapper">
         <button type="button" className="input-action-button">
           <FaPlus />
@@ -33,6 +33,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={disabled}
+          suppressHydrationWarning
         />
         <button type="button" className="input-action-button">
           <FaMicrophone />
