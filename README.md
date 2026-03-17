@@ -2,6 +2,8 @@
 
 Asistente educativo con IA para la gestión de acuerdos académicos. Construido con **Next.js**, **React**, **TypeScript** y **MongoDB**.
 
+Desarrollado por **Jose Poveda Sabater** y **Vive Coding**.
+
 ---
 
 ## Requisitos previos
@@ -122,6 +124,46 @@ npm start
 
 ---
 
+## 4. Despliegue en Vercel
+
+### Conectar el repositorio
+
+1. Ve a [vercel.com](https://vercel.com) e inicia sesión con tu cuenta de GitHub.
+2. Haz clic en **"Add New..." → "Project"**.
+3. Selecciona el repositorio **EduBot**.
+4. Configura el proyecto:
+   - **Root Directory**: `web`
+   - **Framework Preset**: Next.js (se detecta automáticamente)
+   - **Build Command**: dejar por defecto
+   - **Output Directory**: dejar por defecto
+
+### Configurar variables de entorno
+
+5. En la sección **"Environment Variables"** del proyecto en Vercel, añade las mismas 4 variables:
+
+| Variable | Valor |
+|---|---|
+| `MONGODB_URI` | Tu URI de MongoDB Atlas |
+| `JWT_SECRET` | La misma clave secreta que usas en local |
+| `GROQ_API_KEY` | Tu clave de API de Groq |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` |
+
+6. Haz clic en **"Deploy"**.
+
+### Actualizar el despliegue
+
+Cada vez que hagas `git push` a la rama `main`, Vercel re-despliega automáticamente. Si necesitas forzar un redespliegue manual:
+
+1. Ve al dashboard de tu proyecto en [vercel.com](https://vercel.com).
+2. Haz clic en la pestaña **"Deployments"**.
+3. En el despliegue más reciente, haz clic en los **tres puntos (⋮)** → **"Redeploy"**.
+
+### Importante: acceso de red en MongoDB Atlas
+
+Las funciones serverless de Vercel usan IPs dinámicas. Para que puedan conectar a tu base de datos, en MongoDB Atlas ve a **Network Access** y añade la IP `0.0.0.0/0` (acceso desde cualquier lugar).
+
+---
+
 ## Estructura del proyecto
 
 ```
@@ -138,8 +180,16 @@ EduBot/
     │   │   └── registro/       # Registro de usuarios
     │   ├── components/         # Componentes reutilizables
     │   ├── contexts/           # AuthContext
-    │   ├── lib/                # Utilidades (auth, DB, LLM)
+    │   ├── lib/                # Utilidades (auth, DB, LLM, validación)
     │   └── models/             # Esquemas de Mongoose
     ├── .env.local.example      # Plantilla de variables de entorno
     └── package.json
 ```
+
+---
+
+## Autor
+
+Proyecto desarrollado por **Jose Poveda Sabater** y **Vive Coding**.
+
+© 2026 — IES Hermanos Amorós · EduBot 1.0
