@@ -43,10 +43,8 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
   const handleVoiceError = (error: string) => {
     let errorMessage = 'Tu navegador no soporta reconocimiento de voz.';
 
-    if (isBrave()) {
+    if (isBrave() || error === 'network') {
       errorMessage = 'El reconocimiento de voz no funciona en Brave. Usa Chrome o Safari.';
-    } else if (error === 'network') {
-      errorMessage = 'Error de red. Comprueba tu conexión a internet.';
     } else if (error === 'not-allowed') {
       errorMessage = 'Permiso de micrófono denegado.';
     } else if (error === 'no-speech') {
@@ -63,11 +61,6 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
 
     if (!SpeechRecognition) {
       setVoiceError('Tu navegador no soporta reconocimiento de voz.');
-      return;
-    }
-
-    if (isBrave()) {
-      setVoiceError('El reconocimiento de voz no funciona en Brave. Usa Chrome o Safari.');
       return;
     }
 
