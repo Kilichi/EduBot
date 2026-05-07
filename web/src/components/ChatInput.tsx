@@ -7,7 +7,7 @@ type SpeechRecognitionInstance = {
   lang: string;
   continuous: boolean;
   interimResults: boolean;
-  onresult: ((e: { results: Array<Array<{ transcript: string }>> }) => void) | null;
+  onresult: ((e: { results: Array<Array<{ transcript: string; isFinal?: boolean }>> }) => void) | null;
   onerror: (() => void) | null;
   onend: (() => void) | null;
   start(): void;
@@ -47,7 +47,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
           if (recognitionRef.current) {
             recognitionRef.current.stop();
           }
-        }, 2000);
+        }, 5000);
       };
 
       recognition.onresult = (e: { results: Array<Array<{ transcript: string; isFinal?: boolean }>> }) => {
