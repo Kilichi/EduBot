@@ -25,7 +25,6 @@ interface Props {
 }
 
 const SILENCE_TIMEOUT = 5000;
-const PROBE_TIMEOUT = 2000;
 const MAX_RESTARTS = 3;
 
 export default function ChatInput({ onSendMessage, disabled, placeholder }: Props) {
@@ -36,10 +35,8 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const probeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shouldListenRef = useRef(false);
   const restartCountRef = useRef(0);
-  const isProbingRef = useRef(false);
 
   const isBrave = () => !!(window as unknown as Record<string, unknown>).brave;
 
@@ -52,6 +49,8 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
       errorMessage = 'Error de red. Comprueba tu conexión a internet.';
     } else if (error === 'not-allowed') {
       errorMessage = 'Permiso de micrófono denegado.';
+    } else if (error === 'no-speech') {
+      return;
     }
 
     setVoiceError(errorMessage);
@@ -72,6 +71,8 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
       return;
     }
 
+    setIsSupported(true);
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'es-ES';
     recognition.continuous = false;
@@ -89,12 +90,6 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
     };
 
     recognition.onstart = () => {
-      if (isProbingRef.current) {
-        if (probeTimerRef.current) clearTimeout(probeTimerRef.current);
-        isProbingRef.current = false;
-        setIsSupported(true);
-        setVoiceError(null);
-      }
       restartCountRef.current = 0;
     };
 
@@ -116,29 +111,15 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
     };
 
     recognition.onerror = (e: { error: string }) => {
-      if (isProbingRef.current) {
-        if (probeTimerRef.current) clearTimeout(probeTimerRef.current);
-        isProbingRef.current = false;
-        handleVoiceError(e.error);
-        return;
-      }
+      if (e.error === 'no-speech' || e.error === 'aborted') return;
 
       shouldListenRef.current = false;
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-
-      if (e.error !== 'aborted' && e.error !== 'no-speech') {
-        handleVoiceError(e.error);
-      }
+      handleVoiceError(e.error);
     };
 
     recognition.onend = () => {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-
-      if (isProbingRef.current) {
-        isProbingRef.current = false;
-        handleVoiceError('network');
-        return;
-      }
 
       if (shouldListenRef.current && restartCountRef.current < MAX_RESTARTS) {
         restartCountRef.current++;
@@ -156,29 +137,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
 
     recognitionRef.current = recognition;
 
-    isProbingRef.current = true;
-    try {
-      recognition.start();
-    } catch {
-      isProbingRef.current = false;
-      handleVoiceError('network');
-      return;
-    }
-
-    probeTimerRef.current = setTimeout(() => {
-      if (isProbingRef.current) {
-        isProbingRef.current = false;
-        try {
-          recognition.abort();
-        } catch {
-          // Ignore
-        }
-        handleVoiceError('network');
-      }
-    }, PROBE_TIMEOUT);
-
     return () => {
-      if (probeTimerRef.current) clearTimeout(probeTimerRef.current);
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       try {
         recognition.abort();
@@ -204,13 +163,15 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
       setIsListening(false);
     } else {
       setMessage('');
+      setVoiceError(null);
       shouldListenRef.current = true;
       restartCountRef.current = 0;
       try {
         recognitionRef.current.start();
         setIsListening(true);
-      } catch {
+      } catch (err) {
         setIsListening(false);
+        handleVoiceError('network');
       }
     }
   }
