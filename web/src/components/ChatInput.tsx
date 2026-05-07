@@ -8,10 +8,12 @@ type SpeechRecognitionInstance = {
   continuous: boolean;
   interimResults: boolean;
   onresult: ((e: { results: Array<Array<{ transcript: string; isFinal?: boolean }>> }) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((e: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
   start(): void;
   stop(): void;
+  abort(): void;
 };
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
@@ -22,89 +24,217 @@ interface Props {
   placeholder?: string;
 }
 
+const SILENCE_TIMEOUT = 5000;
+const PROBE_TIMEOUT = 2000;
+const MAX_RESTARTS = 3;
+
 export default function ChatInput({ onSendMessage, disabled, placeholder }: Props) {
   const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const probeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shouldListenRef = useRef(false);
+  const restartCountRef = useRef(0);
+  const isProbingRef = useRef(false);
+
+  const isBrave = () => !!(window as unknown as Record<string, unknown>).brave;
+
+  const handleVoiceError = (error: string) => {
+    let errorMessage = 'Tu navegador no soporta reconocimiento de voz.';
+
+    if (isBrave()) {
+      errorMessage = 'El reconocimiento de voz no funciona en Brave. Usa Chrome o Safari.';
+    } else if (error === 'network') {
+      errorMessage = 'Error de red. Comprueba tu conexión a internet.';
+    } else if (error === 'not-allowed') {
+      errorMessage = 'Permiso de micrófono denegado.';
+    }
+
+    setVoiceError(errorMessage);
+  };
 
   useEffect(() => {
     const win = window as unknown as Record<string, unknown>;
     const SpeechRecognition = (win.SpeechRecognition as SpeechRecognitionConstructor | undefined)
       || (win.webkitSpeechRecognition as SpeechRecognitionConstructor | undefined);
 
-    if (SpeechRecognition) {
-      setIsSupported(true);
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'es-ES';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-
-      const resetSilenceTimer = () => {
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = setTimeout(() => {
-          if (recognitionRef.current) {
-            recognitionRef.current.stop();
-          }
-        }, 5000);
-      };
-
-      recognition.onresult = (e: { results: Array<Array<{ transcript: string; isFinal?: boolean }>> }) => {
-        resetSilenceTimer();
-        let finalTranscript = '';
-        for (let i = e.results[0].length - 1; i >= 0; i--) {
-          const transcript = e.results[0][i].transcript;
-          if (e.results[0][i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            setMessage(transcript);
-            return;
-          }
-        }
-        if (finalTranscript) {
-          setMessage((prev) => prev + finalTranscript);
-        }
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      };
-
-      recognitionRef.current = recognition;
+    if (!SpeechRecognition) {
+      setVoiceError('Tu navegador no soporta reconocimiento de voz.');
+      return;
     }
-  }, []);
 
-  function toggleListening() {
-    if (!recognitionRef.current) return;
+    if (isBrave()) {
+      setVoiceError('El reconocimiento de voz no funciona en Brave. Usa Chrome o Safari.');
+      return;
+    }
 
-    if (isListening) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    const resetSilenceTimer = () => {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.start();
-      setIsListening(true);
       silenceTimerRef.current = setTimeout(() => {
+        shouldListenRef.current = false;
+        setIsListening(false);
         if (recognitionRef.current) {
           recognitionRef.current.stop();
         }
-      }, 2000);
+      }, SILENCE_TIMEOUT);
+    };
+
+    recognition.onstart = () => {
+      if (isProbingRef.current) {
+        if (probeTimerRef.current) clearTimeout(probeTimerRef.current);
+        isProbingRef.current = false;
+        setIsSupported(true);
+        setVoiceError(null);
+      }
+      restartCountRef.current = 0;
+    };
+
+    recognition.onresult = (e: { results: Array<Array<{ transcript: string; isFinal?: boolean }>> }) => {
+      resetSilenceTimer();
+      let finalTranscript = '';
+      for (let i = e.results[0].length - 1; i >= 0; i--) {
+        const transcript = e.results[0][i].transcript;
+        if (e.results[0][i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          setMessage(transcript);
+          return;
+        }
+      }
+      if (finalTranscript) {
+        setMessage((prev) => prev + finalTranscript);
+      }
+    };
+
+    recognition.onerror = (e: { error: string }) => {
+      if (isProbingRef.current) {
+        if (probeTimerRef.current) clearTimeout(probeTimerRef.current);
+        isProbingRef.current = false;
+        handleVoiceError(e.error);
+        return;
+      }
+
+      shouldListenRef.current = false;
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+      if (e.error !== 'aborted' && e.error !== 'no-speech') {
+        handleVoiceError(e.error);
+      }
+    };
+
+    recognition.onend = () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+      if (isProbingRef.current) {
+        isProbingRef.current = false;
+        handleVoiceError('network');
+        return;
+      }
+
+      if (shouldListenRef.current && restartCountRef.current < MAX_RESTARTS) {
+        restartCountRef.current++;
+        try {
+          recognition.start();
+        } catch {
+          shouldListenRef.current = false;
+          setIsListening(false);
+        }
+      } else {
+        shouldListenRef.current = false;
+        setIsListening(false);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    isProbingRef.current = true;
+    try {
+      recognition.start();
+    } catch {
+      isProbingRef.current = false;
+      handleVoiceError('network');
+      return;
+    }
+
+    probeTimerRef.current = setTimeout(() => {
+      if (isProbingRef.current) {
+        isProbingRef.current = false;
+        try {
+          recognition.abort();
+        } catch {
+          // Ignore
+        }
+        handleVoiceError('network');
+      }
+    }, PROBE_TIMEOUT);
+
+    return () => {
+      if (probeTimerRef.current) clearTimeout(probeTimerRef.current);
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      try {
+        recognition.abort();
+      } catch {
+        // Ignore
+      }
+    };
+  }, []);
+
+  function toggleListening() {
+    if (!recognitionRef.current || !isSupported) return;
+
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+    if (isListening) {
+      shouldListenRef.current = false;
+      restartCountRef.current = 0;
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // Ignore
+      }
+      setIsListening(false);
+    } else {
+      setMessage('');
+      shouldListenRef.current = true;
+      restartCountRef.current = 0;
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch {
+        setIsListening(false);
+      }
     }
   }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    if (recognitionRef.current && isListening) {
+      shouldListenRef.current = false;
+      restartCountRef.current = 0;
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // Ignore
+      }
+    }
+    setIsListening(false);
     if (message.trim() && !disabled) {
       onSendMessage(message.trim());
       setMessage('');
     }
   }
+
+  const microphoneDisabled = disabled || !isSupported;
 
   return (
     <form className="chat-input-container" onSubmit={handleSubmit} suppressHydrationWarning>
@@ -123,10 +253,10 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
         />
         <button
           type="button"
-          className={`input-action-button ${isListening ? 'listening' : ''}`}
+          className={`input-action-button ${isListening ? 'listening' : ''} ${voiceError ? 'voice-error' : ''}`}
           onClick={toggleListening}
-          disabled={disabled || !isSupported}
-          title={isListening ? 'Detener' : 'Grabar voz'}
+          disabled={microphoneDisabled}
+          title={voiceError || (isListening ? 'Detener' : 'Grabar voz')}
         >
           {isListening ? <FaStop /> : <FaMicrophone />}
         </button>
@@ -134,6 +264,9 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
           <FaPaperPlane className="send-icon" />
         </button>
       </div>
+      {voiceError && (
+        <div className="voice-error-message">{voiceError}</div>
+      )}
     </form>
   );
 }

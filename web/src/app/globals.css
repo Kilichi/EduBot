@@ -449,6 +449,12 @@ a {
 .input-action-button:hover:not(:disabled) { background-color: rgba(255,255,255,0.1); color: var(--white); }
 .input-action-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .input-action-button.listening { color: #ef4444; animation: pulse-red 1.5s infinite; }
+.input-action-button.voice-error { color: #f87171; opacity: 0.7; }
+.voice-error-message {
+  margin-top: 0.5rem; padding: 0.5rem 1rem;
+  background-color: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px; font-size: 0.8125rem; color: #fca5a5;
+}
 @keyframes pulse-red {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
