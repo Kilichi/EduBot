@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useEffect, useRef } from 'react';
 import { FaPlus, FaMicrophone, FaPaperPlane, FaStop } from 'react-icons/fa';
+import { api } from '@/lib/api-client';
 
 type SpeechRecognitionInstance = {
   lang: string;
@@ -31,16 +32,20 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [useGroqApi, setUseGroqApi] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const win = window as unknown as Record<string, unknown>;
     const SpeechRecognition = (win.SpeechRecognition || win.webkitSpeechRecognition) as SpeechRecognitionConstructor | undefined;
 
     if (!SpeechRecognition) {
-      setIsSupported(false);
+      setUseGroqApi(true);
       return;
     }
 
@@ -80,6 +85,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
 
     recognitionRef.current = recognition;
     setIsSupported(true);
+    setUseGroqApi(false);
 
     return () => {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
@@ -87,23 +93,110 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
     };
   }, []);
 
+  const startGroqRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        stream.getTracks().forEach((track) => track.stop());
+
+        if (audioBlob.size > 1000) {
+          try {
+            const text = await api.transcribe(audioBlob);
+            if (text.trim()) {
+              setMessage(text.trim());
+            }
+          } catch (err) {
+            console.error('Transcription error:', err);
+          }
+        }
+
+        setIsProcessing(false);
+        setIsListening(false);
+      };
+
+      mediaRecorder.start();
+      setIsListening(true);
+      setIsProcessing(true);
+
+      silenceTimerRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+      }, 10000);
+
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      setIsListening(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const stopGroqRecording = () => {
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+  };
+
+  const startNativeRecognition = () => {
+    if (!recognitionRef.current) return;
+
+    setMessage('');
+    setIsProcessing(true);
+    try {
+      recognitionRef.current.start();
+      setIsListening(true);
+    } catch {
+      setIsListening(false);
+      setIsProcessing(false);
+      setUseGroqApi(true);
+    }
+  };
+
+  const stopNativeRecognition = () => {
+    if (!recognitionRef.current) return;
+
+    try {
+      recognitionRef.current.stop();
+    } catch { /* ignore */ }
+  };
+
   function toggleListening() {
-    if (!recognitionRef.current || !isSupported) return;
+    if (!isSupported && !useGroqApi) {
+      setUseGroqApi(true);
+    }
 
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
     if (isListening) {
-      try { recognitionRef.current.stop(); } catch { /* ignore */ }
-      setIsListening(false);
+      if (useGroqApi) {
+        stopGroqRecording();
+      } else {
+        stopNativeRecognition();
+      }
     } else {
-      setMessage('');
-      setIsProcessing(true);
-      try {
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch {
-        setIsListening(false);
-        setIsProcessing(false);
+      if (useGroqApi) {
+        startGroqRecording();
+      } else {
+        startNativeRecognition();
       }
     }
   }
@@ -111,9 +204,15 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-    if (recognitionRef.current && isListening) {
-      try { recognitionRef.current.stop(); } catch { /* ignore */ }
+
+    if (isListening) {
+      if (useGroqApi) {
+        stopGroqRecording();
+      } else {
+        stopNativeRecognition();
+      }
     }
+
     setIsListening(false);
     if (message.trim() && !disabled) {
       onSendMessage(message.trim());
@@ -121,7 +220,7 @@ export default function ChatInput({ onSendMessage, disabled, placeholder }: Prop
     }
   }
 
-  const microphoneDisabled = disabled || !isSupported;
+  const microphoneDisabled = disabled;
 
   return (
     <form className="chat-input-container" onSubmit={handleSubmit} suppressHydrationWarning>

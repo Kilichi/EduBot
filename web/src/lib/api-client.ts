@@ -82,5 +82,23 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(acuerdoData),
     }),
+
+  transcribe: async (audioBlob: Blob): Promise<string> => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+
+    const response = await fetch('/api/chat/transcribe', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+
+    const data = await parseJsonSafe(response);
+    if (!response.ok) {
+      throw new Error((data as { error?: string })?.error || 'Error en transcripción');
+    }
+
+    return (data as { text: string }).text;
+  },
 };
 
